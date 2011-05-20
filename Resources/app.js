@@ -49,6 +49,7 @@ win.add(temperatureLabel);
 win.add(detailLabel);
 win.open();
 
+var previousLocation = {};
 function updateLocationName(lat, lng)
 {
 	Titanium.Geolocation.reverseGeocoder(lat, lng, function(e)
@@ -106,6 +107,8 @@ function updateWeather(lat, lng)
 	xhr.send();
 }
 
+setInterval(function(){updateWeather(previousLocation.latitude, previousLocation.longitude);},600000);
+
 if (Titanium.Geolocation.locationServicesEnabled === false)
 {
     Titanium.UI.createAlertDialog({title:'無法使用定位服務', message:'請開啓定位服務，這樣才能取得現在位置的天氣。'}).show();
@@ -130,6 +133,8 @@ else
 		Ti.API.info(longitude+','+latitude);
 		updateLocationName(latitude, longitude);
 		updateWeather(latitude, longitude);
+		previousLocation.latitude = latitude;
+		previousLocation.longitude = longitude;
     });
  
     Titanium.Geolocation.addEventListener('location',function(e)
@@ -145,5 +150,7 @@ else
  		Ti.API.info(longitude+','+latitude);
 		updateLocationName(latitude, longitude);
 		updateWeather(latitude, longitude);
+		previousLocation.latitude = latitude;
+		previousLocation.longitude = longitude;
     }); 
 }
