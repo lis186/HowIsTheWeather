@@ -48,3 +48,41 @@ win.add(weatherIcon);
 win.add(temperatureLabel);
 win.add(detailLabel);
 win.open();
+
+if (Titanium.Geolocation.locationServicesEnabled === false)
+{
+    Titanium.UI.createAlertDialog({title:'無法使用定位服務', message:'請開啓定位服務，這樣才能取得現在位置的天氣。'}).show();
+}
+else
+{ 
+	Ti.Geolocation.purpose = "get current position";
+    Titanium.Geolocation.accuracy = Titanium.Geolocation.ACCURACY_THREE_KILOMETERS;
+ 
+    Titanium.Geolocation.distanceFilter = 1000;
+ 
+    Titanium.Geolocation.getCurrentPosition(function(e)
+    {
+        if (e.error)
+        {
+            Titanium.API.info("error: " + JSON.stringify(e.error));
+            return;
+        }
+ 
+		var latitude = e.coords.latitude;
+        var longitude = e.coords.longitude;
+		Ti.API.info(longitude+','+latitude);
+    });
+ 
+    Titanium.Geolocation.addEventListener('location',function(e)
+    {
+        if (e.error)
+        {
+            Titanium.API.info("error: " + JSON.stringify(e.error));
+            return;
+        }
+ 		
+		var latitude = e.coords.latitude;
+        var longitude = e.coords.longitude;  
+ 		Ti.API.info(longitude+','+latitude);
+    }); 
+}
