@@ -4,7 +4,6 @@ var win = Titanium.UI.createWindow({
 
 var locationLabel = Titanium.UI.createLabel({
 	color:'#000',
-	text:'台北',
 	font:{fontSize: 30, fontFamily:'Helvetica Neue'},
 	textAlign:'center',
 	width:'auto',
@@ -14,7 +13,6 @@ var locationLabel = Titanium.UI.createLabel({
 });
 
 var weatherIcon = Titanium.UI.createImageView({
-	image: 'images/mostly_cloudy.gif',
 	width: 80,
 	height: 80,
 	left: 15,
@@ -23,8 +21,7 @@ var weatherIcon = Titanium.UI.createImageView({
 
 var temperatureLabel = Titanium.UI.createLabel({
 	color:'#000',
-	text:'28°C',
-	font:{fontSize: 90, fontFamily:'Helvetica Neue'},
+	font:{fontSize: 90},
 	textAlign:'center',
 	width:'auto',
 	height: 'auto',
@@ -34,10 +31,9 @@ var temperatureLabel = Titanium.UI.createLabel({
 
 var detailLabel = Titanium.UI.createLabel({
 	color:'#000',
-	text: '多雲時陰\n濕度： 62%\n風向： 西北\n風速：10 公里/小時',
-	font:{fontSize: 24, fontFamily:'Helvetica Neue'},
+	font:{fontSize: 24},
 	textAlign:'left',
-	width:'auto',
+	width:'90%',
 	height: 'auto',
 	left: 20,
 	top: 220
@@ -65,7 +61,7 @@ function updateLocationName(lat, lng)
 		else {
 			Ti.UI.createAlertDialog({
 				title:'Reverse geo error',
-				message:evt.error
+				message:e.error
 			}).show();
 			Ti.API.info("Code translation: "+translateErrorCode(e.code));
 		}
@@ -79,14 +75,17 @@ function updateWeather(lat, lng)
 	xhr.onload = function()
 	{
 		Ti.API.info('weather xml ' + this.responseXML + ' text ' + this.responseText);
-		var doc = this.responseXML.documentElement;
+		//var doc = this.responseXML.documentElement; responseXML has an encoding bug on Android
+		var doc = Titanium.XML.parseString(this.responseText).documentElement;
 
 		var condition = doc.evaluate("//weather/current_conditions/condition").item(0).getAttribute('data');
 		Ti.API.info(condition);
 		var temp_f = doc.evaluate("//weather/current_conditions/temp_f").item(0).getAttribute('data');
 		Ti.API.info(temp_f);
 		var temp_c = doc.evaluate("//weather/current_conditions/temp_c").item(0).getAttribute('data');
-		Ti.API.info(temp_c);	
+		Ti.API.info(temp_c);
+		var humidity = doc.evaluate("//weather/current_conditions/humidity").item(0).getAttribute('data');
+		Ti.API.info(humidity);
 		var icon = 'http://www.google.com' + doc.evaluate("//weather/current_conditions/icon").item(0).getAttribute('data');
 		Ti.API.info(icon);
 		var wind_condition = doc.evaluate("//weather/current_conditions/wind_condition").item(0).getAttribute('data');
@@ -96,6 +95,7 @@ function updateWeather(lat, lng)
 		temperatureLabel.text = temp_c + '°C';
 		weatherIcon.image = icon;
 		detailLabel.text = condition + '\n';
+		detailLabel.text += humidity + '\n';
 		detailLabel.text += wind_condition.split('、')[0] + '\n';
 		detailLabel.text += wind_condition.split('、')[1] + '\n';
 	};
@@ -113,7 +113,7 @@ if (Titanium.Geolocation.locationServicesEnabled === false)
 else
 { 
 	Ti.Geolocation.purpose = "get current position";
-    Titanium.Geolocation.accuracy = Titanium.Geolocation.ACCURACY_THREE_KILOMETERS;
+    Titanium.Geolocation.accuracy = Titanium.Geolocation.ACCURACY_BEST;
  
     Titanium.Geolocation.distanceFilter = 1000;
  
@@ -122,6 +122,7 @@ else
         if (e.error)
         {
             Titanium.API.info("error: " + JSON.stringify(e.error));
+			Titanium.UI.createAlertDialog({title:'無法取得位置資訊', message: e.error.message}).show();
             return;
         }
  
@@ -137,6 +138,7 @@ else
         if (e.error)
         {
             Titanium.API.info("error: " + JSON.stringify(e.error));
+			Titanium.UI.createAlertDialog({title:'無法取得位置資訊', message: e.error.message}).show();
             return;
         }
  		
