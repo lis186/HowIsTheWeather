@@ -1,64 +1,50 @@
-// this sets the background color of the master UIView (when there are no windows/tab groups on it)
-Titanium.UI.setBackgroundColor('#000');
-
-// create tab group
-var tabGroup = Titanium.UI.createTabGroup();
-
-
-//
-// create base UI tab and root window
-//
-var win1 = Titanium.UI.createWindow({  
-    title:'Tab 1',
+var win = Titanium.UI.createWindow({  
     backgroundColor:'#fff'
 });
-var tab1 = Titanium.UI.createTab({  
-    icon:'KS_nav_views.png',
-    title:'Tab 1',
-    window:win1
-});
 
-var label1 = Titanium.UI.createLabel({
-	color:'#999',
-	text:'I am Window 1',
-	font:{fontSize:20,fontFamily:'Helvetica Neue'},
+var locationLabel = Titanium.UI.createLabel({
+	color:'#000',
+	text:'台北',
+	font:{fontSize: 30, fontFamily:'Helvetica Neue'},
 	textAlign:'center',
-	width:'auto'
+	width:'auto',
+	height: 'auto',
+	left: 15,
+	top: 75
 });
 
-win1.add(label1);
-
-//
-// create controls tab and root window
-//
-var win2 = Titanium.UI.createWindow({  
-    title:'Tab 2',
-    backgroundColor:'#fff'
-});
-var tab2 = Titanium.UI.createTab({  
-    icon:'KS_nav_ui.png',
-    title:'Tab 2',
-    window:win2
+var weatherIcon = Titanium.UI.createImageView({
+	image: 'images/mostly_cloudy.gif',
+	width: 80,
+	height: 80,
+	left: 15,
+	top: 120
 });
 
-var label2 = Titanium.UI.createLabel({
-	color:'#999',
-	text:'I am Window 2',
-	font:{fontSize:20,fontFamily:'Helvetica Neue'},
+var temperatureLabel = Titanium.UI.createLabel({
+	color:'#000',
+	text:'28°C',
+	font:{fontSize: 90, fontFamily:'Helvetica Neue'},
 	textAlign:'center',
-	width:'auto'
+	width:'auto',
+	height: 'auto',
+	right: 15,
+	top: 100
 });
 
-win2.add(label2);
+var detailLabel = Titanium.UI.createLabel({
+	color:'#000',
+	text: '多雲時陰\n濕度： 62%\n風向： 西北\n風速：10 公里/小時',
+	font:{fontSize: 24, fontFamily:'Helvetica Neue'},
+	textAlign:'left',
+	width:'auto',
+	height: 'auto',
+	left: 20,
+	top: 220
+});
 
-
-
-//
-//  add tabs
-//
-tabGroup.addTab(tab1);  
-tabGroup.addTab(tab2);  
-
-
-// open tab group
-tabGroup.open();
+win.add(locationLabel);
+win.add(weatherIcon);
+win.add(temperatureLabel);
+win.add(detailLabel);
+win.open();
