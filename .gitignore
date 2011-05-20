@@ -1,1 +1,4 @@
 tmp
+.DS_Store
+/build
+/Resources/.DS_Store
