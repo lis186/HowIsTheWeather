@@ -72,6 +72,40 @@ function updateLocationName(lat, lng)
 	});
 }
 
+function updateWeather(lat, lng)
+{
+	var xhr = Titanium.Network.createHTTPClient();
+
+	xhr.onload = function()
+	{
+		Ti.API.info('weather xml ' + this.responseXML + ' text ' + this.responseText);
+		var doc = this.responseXML.documentElement;
+
+		var condition = doc.evaluate("//weather/current_conditions/condition").item(0).getAttribute('data');
+		Ti.API.info(condition);
+		var temp_f = doc.evaluate("//weather/current_conditions/temp_f").item(0).getAttribute('data');
+		Ti.API.info(temp_f);
+		var temp_c = doc.evaluate("//weather/current_conditions/temp_c").item(0).getAttribute('data');
+		Ti.API.info(temp_c);	
+		var icon = 'http://www.google.com' + doc.evaluate("//weather/current_conditions/icon").item(0).getAttribute('data');
+		Ti.API.info(icon);
+		var wind_condition = doc.evaluate("//weather/current_conditions/wind_condition").item(0).getAttribute('data');
+		Ti.API.info(wind_condition.split('、')[0]);
+		Ti.API.info(wind_condition.split('、')[1]);
+		
+		temperatureLabel.text = temp_c + '°C';
+		weatherIcon.image = icon;
+		detailLabel.text = condition + '\n';
+		detailLabel.text += wind_condition.split('、')[0] + '\n';
+		detailLabel.text += wind_condition.split('、')[1] + '\n';
+	};
+
+	var url = 'http://www.google.com/ig/api?hl=zh-tw&weather=,,,'+parseInt(lat*1000000, 10)+','+parseInt(lng*1000000, 10);
+	Ti.API.info(url);
+	xhr.open('GET', url);
+	xhr.send();
+}
+
 if (Titanium.Geolocation.locationServicesEnabled === false)
 {
     Titanium.UI.createAlertDialog({title:'無法使用定位服務', message:'請開啓定位服務，這樣才能取得現在位置的天氣。'}).show();
@@ -95,6 +129,7 @@ else
         var longitude = e.coords.longitude;
 		Ti.API.info(longitude+','+latitude);
 		updateLocationName(latitude, longitude);
+		updateWeather(latitude, longitude);
     });
  
     Titanium.Geolocation.addEventListener('location',function(e)
@@ -109,5 +144,6 @@ else
         var longitude = e.coords.longitude;  
  		Ti.API.info(longitude+','+latitude);
 		updateLocationName(latitude, longitude);
+		updateWeather(latitude, longitude);
     }); 
 }
