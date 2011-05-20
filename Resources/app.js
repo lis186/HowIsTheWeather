@@ -49,6 +49,29 @@ win.add(temperatureLabel);
 win.add(detailLabel);
 win.open();
 
+function updateLocationName(lat, lng)
+{
+	Titanium.Geolocation.reverseGeocoder(lat, lng, function(e)
+	{
+		if (e.success) {
+			var places = e.places;
+			if (places && places.length) {
+				locationLabel.text = places[0].city;
+			} else {
+				locationLabel.text = "找不到地名";
+			}
+			Ti.API.debug("reverse geolocation result = "+JSON.stringify(e));
+		}
+		else {
+			Ti.UI.createAlertDialog({
+				title:'Reverse geo error',
+				message:evt.error
+			}).show();
+			Ti.API.info("Code translation: "+translateErrorCode(e.code));
+		}
+	});
+}
+
 if (Titanium.Geolocation.locationServicesEnabled === false)
 {
     Titanium.UI.createAlertDialog({title:'無法使用定位服務', message:'請開啓定位服務，這樣才能取得現在位置的天氣。'}).show();
@@ -71,6 +94,7 @@ else
 		var latitude = e.coords.latitude;
         var longitude = e.coords.longitude;
 		Ti.API.info(longitude+','+latitude);
+		updateLocationName(latitude, longitude);
     });
  
     Titanium.Geolocation.addEventListener('location',function(e)
@@ -84,5 +108,6 @@ else
 		var latitude = e.coords.latitude;
         var longitude = e.coords.longitude;  
  		Ti.API.info(longitude+','+latitude);
+		updateLocationName(latitude, longitude);
     }); 
 }
