@@ -48,12 +48,132 @@ if(Titanium.Platform.osname === 'iphone')
 	indicator.width = 30;
 }
 
+var settingButton = Titanium.UI.createButton({
+	width: 44,
+	height: 44,
+	right: 5,
+	bottom: 5,
+	style: Titanium.UI.iPhone.SystemButton.INFO_DARK
+});
+
+var settingWin = Titanium.UI.createWindow({  
+    backgroundColor:'gray'
+});
+
+if(Titanium.Platform.osname === 'iphone')
+{
+	var unitTabbedBar = Titanium.UI.createTabbedBar({
+		fontSize: 40,
+	    labels:['°C', '°F'],
+	    style:Titanium.UI.iPhone.SystemButtonStyle.BAR,
+	    height: 40,
+	    width: '90%'
+	});
+	
+	unitTabbedBar.addEventListener('click', function(e){
+		if(e.index === 0)
+		{
+			Titanium.App.Properties.setString('tempUnit', 'c');
+		}else if (e.index === 1){
+			Titanium.App.Properties.setString('tempUnit', 'f');
+		}
+	});
+	
+	settingWin.add(unitTabbedBar);
+	win.add(settingButton);
+	settingButton.addEventListener('click', function(e){
+		settingWin.open({transition: Ti.UI.iPhone.AnimationStyle.FLIP_FROM_LEFT});
+		var tempUnit = Titanium.App.Properties.getString('tempUnit', 'c');
+		if(tempUnit === 'c')
+		{
+			unitTabbedBar.index = 0;
+		}else if(tempUnit === 'f')
+		{
+			unitTabbedBar.index = 1;
+		}
+		win.close();
+	});
+	
+}else if(Titanium.Platform.osname === 'android')
+{
+	
+	var cButton = Titanium.UI.createButton({
+		title: '°C',
+		top: '50%',
+		width: '40%',
+		height: 80,
+		left: 10
+	});
+	
+	cButton.addEventListener('click', function(e){
+		Titanium.App.Properties.setString('tempUnit', 'c');
+		cButton.enabled = false;
+		fButton.enabled = true;
+	});
+
+	var fButton = Titanium.UI.createButton({
+		title: '°F',
+		top: '50%',
+		width: '40%',
+		height: 80,
+		right: 10
+	});
+
+	fButton.addEventListener('click', function(e){
+		Titanium.App.Properties.setString('tempUnit', 'f');
+		cButton.enabled = true;
+		fButton.enabled = false;
+	});
+
+	settingWin.add(cButton);
+	settingWin.add(fButton);
+	
+	Titanium.Android.currentActivity.onCreateOptionsMenu = function(e) {
+		Titanium.API.info("create menu");
+	    var menu = e.menu;
+	    var menuItem = menu.add({ title: '設定' });
+	    menuItem.addEventListener("click", function(e) {
+			settingWin.open();
+			var tempUnit = Titanium.App.Properties.getString('tempUnit', 'c');
+			if(tempUnit === 'c')
+			{
+				cButton.enabled = false;
+				fButton.enabled = true;
+			}else if(tempUnit === 'f')
+			{
+				cButton.enabled = true;
+				fButton.enabled = false;
+			}
+			win.close();
+	    });
+	};
+}
+
+var doneButton = Titanium.UI.createButton({
+	width: '90%',
+	height: 80,
+	title: '完成',
+	bottom: 20
+});
+
+settingWin.add(doneButton);
+
 win.add(locationLabel);
 win.add(weatherIcon);
 win.add(temperatureLabel);
 win.add(detailLabel);
 win.add(indicator);
 win.open();
+
+doneButton.addEventListener('click', function(e){
+	settingWin.close({transition: Ti.UI.iPhone.AnimationStyle.FLIP_FROM_RIGHT});
+	win.open();
+	getCurrentWeather();
+});
+
+getCurrentWeather();
+
+updateInterval = setInterval(getCurrentWeather, 300000);
 
 function updateLocationName(lat, lng)
 {
@@ -84,7 +204,6 @@ function updateWeather(lat, lng)
 		Ti.API.info('weather xml ' + this.responseXML + ' text ' + this.responseText);
 		//var doc = this.responseXML.documentElement; responseXML has an encoding bug on Andrid
 		var doc = Titanium.XML.parseString(this.responseText).documentElement;
-
 		var condition = doc.evaluate("//weather/current_conditions/condition").item(0).getAttribute('data');
 		Ti.API.info(condition);
 		var temp_f = doc.evaluate("//weather/current_conditions/temp_f").item(0).getAttribute('data');
@@ -98,8 +217,22 @@ function updateWeather(lat, lng)
 		var wind_condition = doc.evaluate("//weather/current_conditions/wind_condition").item(0).getAttribute('data');
 		Ti.API.info(wind_condition.split('、')[0]);
 		Ti.API.info(wind_condition.split('、')[1]);
-		
-		temperatureLabel.text = temp_c + '°C';
+		var tempUnit = Titanium.App.Properties.getString('tempUnit', 'c');
+		if(tempUnit === 'c')
+		{
+			temperatureLabel.text = temp_c + '°C';
+			if(Titanium.Platform.osname === 'iphone')
+			{
+				Titanium.UI.iPhone.appBadge = temp_c;
+			}
+		}else if(tempUnit === 'f')
+		{
+			temperatureLabel.text = temp_f + '°F';
+			if(Titanium.Platform.osname === 'iphone')
+			{
+				Titanium.UI.iPhone.appBadge = temp_f;
+			}
+		}
 		weatherIcon.image = icon;
 		detailLabel.text = condition + '\n';
 		detailLabel.text += humidity + '\n';
@@ -150,6 +283,3 @@ function getCurrentWeather()
 	    });
 	}
 }
-
-getCurrentWeather();
-updateInterval = setInterval(getCurrentWeather, 60000);
