@@ -39,13 +39,22 @@ var detailLabel = Titanium.UI.createLabel({
 	top: 220
 });
 
+var indicator = Titanium.UI.createActivityIndicator();
+
+if(Titanium.Platform.osname === 'iphone')
+{
+	indicator.style = Titanium.UI.iPhone.ActivityIndicatorStyle.BIG;
+	indicator.height = 30;
+	indicator.width = 30;
+}
+
 win.add(locationLabel);
 win.add(weatherIcon);
 win.add(temperatureLabel);
 win.add(detailLabel);
+win.add(indicator);
 win.open();
 
-var previousLocation = {};
 function updateLocationName(lat, lng)
 {
 	Titanium.Geolocation.reverseGeocoder(lat, lng, function(e)
@@ -60,10 +69,7 @@ function updateLocationName(lat, lng)
 			Ti.API.debug("reverse geolocation result = "+JSON.stringify(e));
 		}
 		else {
-			Ti.UI.createAlertDialog({
-				title:'Reverse geo error',
-				message:e.error
-			}).show();
+			Titanium.UI.createAlertDialog({title:'無法取得地名', message:'請稍候再試。'}).show();
 			Ti.API.info("Code translation: "+translateErrorCode(e.code));
 		}
 	});
@@ -72,11 +78,11 @@ function updateLocationName(lat, lng)
 function updateWeather(lat, lng)
 {
 	var xhr = Titanium.Network.createHTTPClient();
-
 	xhr.onload = function()
 	{
+		indicator.hide();
 		Ti.API.info('weather xml ' + this.responseXML + ' text ' + this.responseText);
-		//var doc = this.responseXML.documentElement; responseXML has an encoding bug on Android
+		//var doc = this.responseXML.documentElement; responseXML has an encoding bug on Andrid
 		var doc = Titanium.XML.parseString(this.responseText).documentElement;
 
 		var condition = doc.evaluate("//weather/current_conditions/condition").item(0).getAttribute('data');
@@ -107,52 +113,43 @@ function updateWeather(lat, lng)
 	xhr.send();
 }
 
-setInterval(function(){updateWeather(previousLocation.latitude, previousLocation.longitude);},600000);
-
-if (Titanium.Geolocation.locationServicesEnabled === false)
+function getCurrentWeather()
 {
-    Titanium.UI.createAlertDialog({title:'無法使用定位服務', message:'請開啓定位服務，這樣才能取得現在位置的天氣。'}).show();
+	if(Titanium.Platform.osname === 'android')
+	{
+		indicator.message = '取得目前位置';
+	}
+	indicator.show();
+	
+	if (Titanium.Geolocation.locationServicesEnabled === false)
+	{
+		indicator.hide();
+	    Titanium.UI.createAlertDialog({title:'無法使用定位服務', message:'請開啓定位服務，這樣才能取得現在位置的天氣。'}).show();
+	}
+	else
+	{ 
+		Ti.Geolocation.purpose = "取得目前位置的天氣資訊";
+	    Titanium.Geolocation.accuracy = Titanium.Geolocation.ACCURACY_BEST;
+
+	    Titanium.Geolocation.distanceFilter = 1000;
+		
+	    Titanium.Geolocation.getCurrentPosition(function(e)
+	    {
+			indicator.hide();
+	        if (e.error)
+	        {
+	            Titanium.API.info("error: " + JSON.stringify(e.error));
+				Titanium.UI.createAlertDialog({title:'無法取得位置資訊', message: e.error.message}).show();
+	            return;
+	        }
+			var latitude = e.coords.latitude;
+	        var longitude = e.coords.longitude;
+			Ti.API.info(longitude+','+latitude);
+			updateLocationName(latitude, longitude);
+			updateWeather(latitude, longitude);
+	    });
+	}
 }
-else
-{ 
-	Ti.Geolocation.purpose = "get current position";
-    Titanium.Geolocation.accuracy = Titanium.Geolocation.ACCURACY_BEST;
- 
-    Titanium.Geolocation.distanceFilter = 1000;
- 
-    Titanium.Geolocation.getCurrentPosition(function(e)
-    {
-        if (e.error)
-        {
-            Titanium.API.info("error: " + JSON.stringify(e.error));
-			Titanium.UI.createAlertDialog({title:'無法取得位置資訊', message: e.error.message}).show();
-            return;
-        }
- 
-		var latitude = e.coords.latitude;
-        var longitude = e.coords.longitude;
-		Ti.API.info(longitude+','+latitude);
-		updateLocationName(latitude, longitude);
-		updateWeather(latitude, longitude);
-		previousLocation.latitude = latitude;
-		previousLocation.longitude = longitude;
-    });
- 
-    Titanium.Geolocation.addEventListener('location',function(e)
-    {
-        if (e.error)
-        {
-            Titanium.API.info("error: " + JSON.stringify(e.error));
-			Titanium.UI.createAlertDialog({title:'無法取得位置資訊', message: e.error.message}).show();
-            return;
-        }
- 		
-		var latitude = e.coords.latitude;
-        var longitude = e.coords.longitude;  
- 		Ti.API.info(longitude+','+latitude);
-		updateLocationName(latitude, longitude);
-		updateWeather(latitude, longitude);
-		previousLocation.latitude = latitude;
-		previousLocation.longitude = longitude;
-    }); 
-}
+
+getCurrentWeather();
+updateInterval = setInterval(getCurrentWeather, 60000);
