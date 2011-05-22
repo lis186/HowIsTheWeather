@@ -1,4 +1,4 @@
-var win = Titanium.UI.createWindow({  
+var mainWin = Titanium.UI.createWindow({  
     backgroundColor:'#fff'
 });
 
@@ -56,9 +56,17 @@ var settingButton = Titanium.UI.createButton({
 	style: Titanium.UI.iPhone.SystemButton.INFO_DARK
 });
 
+
 var settingWin = Titanium.UI.createWindow({  
     backgroundColor:'gray'
 });
+
+mainWin.add(locationLabel);
+mainWin.add(weatherIcon);
+mainWin.add(temperatureLabel);
+mainWin.add(detailLabel);
+mainWin.add(indicator);
+mainWin.open();
 
 if(Titanium.Platform.osname === 'iphone')
 {
@@ -80,7 +88,7 @@ if(Titanium.Platform.osname === 'iphone')
 	});
 	
 	settingWin.add(unitTabbedBar);
-	win.add(settingButton);
+	mainWin.add(settingButton);
 	settingButton.addEventListener('click', function(e){
 		settingWin.open({transition: Ti.UI.iPhone.AnimationStyle.FLIP_FROM_LEFT});
 		var tempUnit = Titanium.App.Properties.getString('tempUnit', 'c');
@@ -91,7 +99,7 @@ if(Titanium.Platform.osname === 'iphone')
 		{
 			unitTabbedBar.index = 1;
 		}
-		win.close();
+		mainWin.close();
 	});
 	
 }else if(Titanium.Platform.osname === 'android')
@@ -144,7 +152,7 @@ if(Titanium.Platform.osname === 'iphone')
 				cButton.enabled = true;
 				fButton.enabled = false;
 			}
-			win.close();
+			mainWin.close();
 	    });
 	};
 }
@@ -158,16 +166,9 @@ var doneButton = Titanium.UI.createButton({
 
 settingWin.add(doneButton);
 
-win.add(locationLabel);
-win.add(weatherIcon);
-win.add(temperatureLabel);
-win.add(detailLabel);
-win.add(indicator);
-win.open();
-
 doneButton.addEventListener('click', function(e){
 	settingWin.close({transition: Ti.UI.iPhone.AnimationStyle.FLIP_FROM_RIGHT});
-	win.open();
+	mainWin.open();
 	getCurrentWeather();
 });
 
