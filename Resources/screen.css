@@ -1,0 +1,13 @@
+body{
+	text-align: center;
+	background-color: #999;
+}
+
+h1{
+	font-weight: bold;
+	font-size: 50px;
+}
+
+p{
+	font-size: 30px;
+}

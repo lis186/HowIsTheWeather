@@ -3,3 +3,5 @@ tmp
 /build
 /Resources/.DS_Store
 /build.log
+/.*
+/api.jsca

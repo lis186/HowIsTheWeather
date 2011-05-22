@@ -48,25 +48,29 @@ if(Titanium.Platform.osname === 'iphone')
 	indicator.width = 30;
 }
 
-var settingButton = Titanium.UI.createButton({
-	width: 44,
-	height: 44,
-	right: 5,
-	bottom: 5,
-	style: Titanium.UI.iPhone.SystemButton.INFO_DARK
-});
-
-
-var settingWin = Titanium.UI.createWindow({  
-    backgroundColor:'gray'
-});
-
+mainWin.add(indicator);
 mainWin.add(locationLabel);
 mainWin.add(weatherIcon);
 mainWin.add(temperatureLabel);
 mainWin.add(detailLabel);
-mainWin.add(indicator);
+
 mainWin.open();
+
+var settingWin = Titanium.UI.createWindow({  
+    backgroundColor: '#999'
+});
+
+ var aboutWebview = Titanium.UI.createWebView({
+	url:'about.html',
+	scalesPageToFit: true,
+	horizontalBounce: false,
+	left: 0,
+	right: 0,
+	top: 0,
+	bottom: 190
+	});
+	
+	settingWin.add(aboutWebview);
 
 if(Titanium.Platform.osname === 'iphone')
 {
@@ -88,6 +92,15 @@ if(Titanium.Platform.osname === 'iphone')
 	});
 	
 	settingWin.add(unitTabbedBar);
+	
+	var settingButton = Titanium.UI.createButton({
+		width: 44,
+		height: 44,
+		right: 5,
+		bottom: 5,
+		style: Titanium.UI.iPhone.SystemButton.INFO_DARK
+	});
+	
 	mainWin.add(settingButton);
 	settingButton.addEventListener('click', function(e){
 		settingWin.open({transition: Ti.UI.iPhone.AnimationStyle.FLIP_FROM_LEFT});
@@ -107,26 +120,26 @@ if(Titanium.Platform.osname === 'iphone')
 	
 	var cButton = Titanium.UI.createButton({
 		title: '°C',
-		top: '50%',
-		width: '40%',
+		bottom: 120,
+		width: 140,
 		height: 80,
-		left: 10
+		left: 15
 	});
 	
+	var fButton = Titanium.UI.createButton({
+		title: '°F',
+		bottom: 120,
+		width: 140,
+		height: 80,
+		right: 15
+	});
+
 	cButton.addEventListener('click', function(e){
 		Titanium.App.Properties.setString('tempUnit', 'c');
 		cButton.enabled = false;
 		fButton.enabled = true;
 	});
-
-	var fButton = Titanium.UI.createButton({
-		title: '°F',
-		top: '50%',
-		width: '40%',
-		height: 80,
-		right: 10
-	});
-
+	
 	fButton.addEventListener('click', function(e){
 		Titanium.App.Properties.setString('tempUnit', 'f');
 		cButton.enabled = true;
@@ -139,9 +152,19 @@ if(Titanium.Platform.osname === 'iphone')
 	Titanium.Android.currentActivity.onCreateOptionsMenu = function(e) {
 		Titanium.API.info("create menu");
 	    var menu = e.menu;
-	    var menuItem = menu.add({ title: '設定' });
-	    menuItem.addEventListener("click", function(e) {
-			settingWin.open();
+	    var refreshMenuItem = menu.add({ title: '更新天氣' });
+	    var settingMenuItem = menu.add({ title: '設定' });
+	    
+	    refreshMenuItem.addEventListener("click", function(e) {
+			getCurrentWeather();
+	    });
+	    settingMenuItem.addEventListener("click", function(e) {
+			indicator.hide();
+			var animation = Titanium.UI.createAnimation();
+			animation.height = Titanium.Platform.displayCaps.platformHeight;
+			animation.width = Titanium.Platform.displayCaps.platformWidth;
+			animation.duration = 1000;
+			settingWin.open(animation);
 			var tempUnit = Titanium.App.Properties.getString('tempUnit', 'c');
 			if(tempUnit === 'c')
 			{
@@ -158,7 +181,7 @@ if(Titanium.Platform.osname === 'iphone')
 }
 
 var doneButton = Titanium.UI.createButton({
-	width: '90%',
+	width: 300,
 	height: 80,
 	title: '完成',
 	bottom: 20
@@ -167,13 +190,12 @@ var doneButton = Titanium.UI.createButton({
 settingWin.add(doneButton);
 
 doneButton.addEventListener('click', function(e){
-	settingWin.close({transition: Ti.UI.iPhone.AnimationStyle.FLIP_FROM_RIGHT});
 	mainWin.open();
+	settingWin.close({transition: Ti.UI.iPhone.AnimationStyle.FLIP_FROM_RIGHT});
 	getCurrentWeather();
 });
 
 getCurrentWeather();
-
 updateInterval = setInterval(getCurrentWeather, 300000);
 
 function updateLocationName(lat, lng)
@@ -185,7 +207,7 @@ function updateLocationName(lat, lng)
 			if (places && places.length) {
 				locationLabel.text = places[0].city;
 			} else {
-				locationLabel.text = "找不到地名";
+				locationLabel.text = "";
 			}
 			Ti.API.debug("reverse geolocation result = "+JSON.stringify(e));
 		}
@@ -197,7 +219,12 @@ function updateLocationName(lat, lng)
 }
 
 function updateWeather(lat, lng)
-{
+{	
+	if(Titanium.Platform.osname === 'android')
+	{
+		indicator.message = '讀取天氣資訊中';
+	}
+	indicator.show();
 	var xhr = Titanium.Network.createHTTPClient();
 	xhr.onload = function()
 	{
@@ -240,7 +267,6 @@ function updateWeather(lat, lng)
 		detailLabel.text += wind_condition.split('、')[0] + '\n';
 		detailLabel.text += wind_condition.split('、')[1] + '\n';
 	};
-
 	var url = 'http://www.google.com/ig/api?hl=zh-tw&weather=,,,'+parseInt(lat*1000000, 10)+','+parseInt(lng*1000000, 10);
 	Ti.API.info(url);
 	xhr.open('GET', url);
@@ -249,31 +275,24 @@ function updateWeather(lat, lng)
 
 function getCurrentWeather()
 {
-	if(Titanium.Platform.osname === 'android')
-	{
-		indicator.message = '取得目前位置';
-	}
-	indicator.show();
 	
 	if (Titanium.Geolocation.locationServicesEnabled === false)
 	{
-		indicator.hide();
 	    Titanium.UI.createAlertDialog({title:'無法使用定位服務', message:'請開啓定位服務，這樣才能取得現在位置的天氣。'}).show();
 	}
 	else
 	{ 
 		Ti.Geolocation.purpose = "取得目前位置的天氣資訊";
-	    Titanium.Geolocation.accuracy = Titanium.Geolocation.ACCURACY_BEST;
-
+	    Titanium.Geolocation.accuracy = Titanium.Geolocation.ACCURACY_BEST;	
 	    Titanium.Geolocation.distanceFilter = 1000;
 		
 	    Titanium.Geolocation.getCurrentPosition(function(e)
 	    {
-			indicator.hide();
 	        if (e.error)
 	        {
 	            Titanium.API.info("error: " + JSON.stringify(e.error));
 				Titanium.UI.createAlertDialog({title:'無法取得位置資訊', message: e.error.message}).show();
+				detailLabel.text = '無法取得目前位置的天氣資訊，請稍候再試。';
 	            return;
 	        }
 			var latitude = e.coords.latitude;
