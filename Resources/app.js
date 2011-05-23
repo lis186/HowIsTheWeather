@@ -1,3 +1,6 @@
+//
+// create main window
+//
 var mainWin = Titanium.UI.createWindow({  
     backgroundColor:'#fff'
 });
@@ -53,23 +56,26 @@ mainWin.add(locationLabel);
 mainWin.add(weatherIcon);
 mainWin.add(temperatureLabel);
 mainWin.add(detailLabel);
-
 mainWin.open();
 
+//
+// create setting window
+//
 var settingWin = Titanium.UI.createWindow({  
     backgroundColor: '#999'
 });
 
  var aboutWebview = Titanium.UI.createWebView({
 	url:'about.html',
+	backgroundColor: 'red',
 	scalesPageToFit: true,
-	horizontalBounce: false,
+	width: '100%',
+	height: '50%',
 	left: 0,
 	right: 0,
 	top: 0,
 	bottom: 190
 	});
-	
 	settingWin.add(aboutWebview);
 
 if(Titanium.Platform.osname === 'iphone')
@@ -78,7 +84,7 @@ if(Titanium.Platform.osname === 'iphone')
 		fontSize: 40,
 	    labels:['°C', '°F'],
 	    style:Titanium.UI.iPhone.SystemButtonStyle.BAR,
-	    height: 40,
+	    height: 30,
 	    width: '90%'
 	});
 	
@@ -117,7 +123,6 @@ if(Titanium.Platform.osname === 'iphone')
 	
 }else if(Titanium.Platform.osname === 'android')
 {
-	
 	var cButton = Titanium.UI.createButton({
 		title: '°C',
 		bottom: 120,
@@ -190,14 +195,28 @@ var doneButton = Titanium.UI.createButton({
 settingWin.add(doneButton);
 
 doneButton.addEventListener('click', function(e){
-	mainWin.open();
-	settingWin.close({transition: Ti.UI.iPhone.AnimationStyle.FLIP_FROM_RIGHT});
+	if(Titanium.Platform.osname === 'iphone')
+	{	
+		settingWin.close({transition: Ti.UI.iPhone.AnimationStyle.FLIP_FROM_RIGHT});
+		mainWin.open();
+	}else if(Titanium.Platform.osname === 'android')
+	{
+		mainWin.open();
+		settingWin.close();
+	}	
 	getCurrentWeather();
 });
+
+//
+// update weather every 5 minutes
+//
 
 getCurrentWeather();
 updateInterval = setInterval(getCurrentWeather, 300000);
 
+//
+// get location name
+//
 function updateLocationName(lat, lng)
 {
 	Titanium.Geolocation.reverseGeocoder(lat, lng, function(e)
@@ -218,6 +237,9 @@ function updateLocationName(lat, lng)
 	});
 }
 
+//
+// get current weather by location
+//
 function updateWeather(lat, lng)
 {	
 	if(Titanium.Platform.osname === 'android')
@@ -273,6 +295,9 @@ function updateWeather(lat, lng)
 	xhr.send();
 }
 
+//
+// get current weather
+//
 function getCurrentWeather()
 {
 	
@@ -302,4 +327,33 @@ function getCurrentWeather()
 			updateWeather(latitude, longitude);
 	    });
 	}
+}
+
+//
+// iPhone background service to update temperature on badge
+//
+
+if(Titanium.Platform.osname === 'iphone')
+{
+	var service;
+	Titanium.App.addEventListener('pause',function(e)
+	{
+		Ti.API.info('pause');
+		service = Titanium.App.iOS.registerBackgroundService({
+		    url: 'bgjob.js',
+			tempUnit: Titanium.App.Properties.getString('tempUnit', 'c')
+		  });
+		Titanium.API.info("registered background service = "+service);
+	});
+
+	Titanium.App.addEventListener('resume',function(e)
+	{
+		Ti.API.info('resume');
+		if(service != null){
+			getCurrentWeather();
+			service.stop();
+			service.unregister();
+			Ti.API.info('Stop background service');
+		}
+	});
 }
