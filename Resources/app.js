@@ -1,3 +1,4 @@
+var PlatformOS = Titanium.Platform.osname;
 //
 // create main window
 //
@@ -44,7 +45,7 @@ var detailLabel = Titanium.UI.createLabel({
 
 var indicator = Titanium.UI.createActivityIndicator();
 
-if(Titanium.Platform.osname === 'iphone')
+if(PlatformOS === 'iphone' || PlatformOS === 'ipad')
 {
 	indicator.style = Titanium.UI.iPhone.ActivityIndicatorStyle.BIG;
 	indicator.height = 30;
@@ -65,9 +66,8 @@ var settingWin = Titanium.UI.createWindow({
     backgroundColor: '#999'
 });
 
- var aboutWebview = Titanium.UI.createWebView({
-	url:'about.html',
-	backgroundColor: 'red',
+var aboutWebview = Titanium.UI.createWebView({
+	url: 'about.html',
 	scalesPageToFit: true,
 	width: '100%',
 	height: '50%',
@@ -76,15 +76,17 @@ var settingWin = Titanium.UI.createWindow({
 	top: 0,
 	bottom: 190
 	});
-	settingWin.add(aboutWebview);
+	
+settingWin.add(aboutWebview);
 
-if(Titanium.Platform.osname === 'iphone')
+if(PlatformOS === 'iphone' || PlatformOS === 'ipad')
 {
 	var unitTabbedBar = Titanium.UI.createTabbedBar({
 		fontSize: 40,
 	    labels:['°C', '°F'],
 	    style:Titanium.UI.iPhone.SystemButtonStyle.BAR,
-	    height: 30,
+	    height: 60,
+		bottom: 130,
 	    width: '90%'
 	});
 	
@@ -105,23 +107,8 @@ if(Titanium.Platform.osname === 'iphone')
 		right: 5,
 		bottom: 5,
 		style: Titanium.UI.iPhone.SystemButton.INFO_DARK
-	});
-	
-	mainWin.add(settingButton);
-	settingButton.addEventListener('click', function(e){
-		settingWin.open({transition: Ti.UI.iPhone.AnimationStyle.FLIP_FROM_LEFT});
-		var tempUnit = Titanium.App.Properties.getString('tempUnit', 'c');
-		if(tempUnit === 'c')
-		{
-			unitTabbedBar.index = 0;
-		}else if(tempUnit === 'f')
-		{
-			unitTabbedBar.index = 1;
-		}
-		mainWin.close();
-	});
-	
-}else if(Titanium.Platform.osname === 'android')
+	});	
+}else if(PlatformOS === 'android')
 {
 	var cButton = Titanium.UI.createButton({
 		title: '°C',
@@ -153,7 +140,50 @@ if(Titanium.Platform.osname === 'iphone')
 
 	settingWin.add(cButton);
 	settingWin.add(fButton);
-	
+}
+
+var doneButton = Titanium.UI.createButton({
+	width: 300,
+	height: 80,
+	title: '完成',
+	bottom: 20
+});
+
+settingWin.add(doneButton);
+
+doneButton.addEventListener('click', function(e){
+	if(PlatformOS === 'iphone' || PlatformOS === 'ipad')
+	{	
+		settingWin.close({transition: Ti.UI.iPhone.AnimationStyle.FLIP_FROM_RIGHT});
+		mainWin.open();
+	}else if(PlatformOS === 'android')
+	{
+		mainWin.open();
+		settingWin.close();
+	}	
+	getCurrentWeather();
+});
+
+//
+// switch to setting window
+//
+if(PlatformOS === 'iphone' || PlatformOS === 'ipad')
+{
+	mainWin.add(settingButton);
+	settingButton.addEventListener('click', function(e){
+		settingWin.open({transition: Ti.UI.iPhone.AnimationStyle.FLIP_FROM_LEFT});
+		var tempUnit = Titanium.App.Properties.getString('tempUnit', 'c');
+		if(tempUnit === 'c')
+		{
+			unitTabbedBar.index = 0;
+		}else if(tempUnit === 'f')
+		{
+			unitTabbedBar.index = 1;
+		}
+		mainWin.close();
+	});
+}else if(PlatformOS === 'android')
+{
 	Titanium.Android.currentActivity.onCreateOptionsMenu = function(e) {
 		Titanium.API.info("create menu");
 	    var menu = e.menu;
@@ -165,11 +195,7 @@ if(Titanium.Platform.osname === 'iphone')
 	    });
 	    settingMenuItem.addEventListener("click", function(e) {
 			indicator.hide();
-			var animation = Titanium.UI.createAnimation();
-			animation.height = Titanium.Platform.displayCaps.platformHeight;
-			animation.width = Titanium.Platform.displayCaps.platformWidth;
-			animation.duration = 1000;
-			settingWin.open(animation);
+			settingWin.open();
 			var tempUnit = Titanium.App.Properties.getString('tempUnit', 'c');
 			if(tempUnit === 'c')
 			{
@@ -184,28 +210,6 @@ if(Titanium.Platform.osname === 'iphone')
 	    });
 	};
 }
-
-var doneButton = Titanium.UI.createButton({
-	width: 300,
-	height: 80,
-	title: '完成',
-	bottom: 20
-});
-
-settingWin.add(doneButton);
-
-doneButton.addEventListener('click', function(e){
-	if(Titanium.Platform.osname === 'iphone')
-	{	
-		settingWin.close({transition: Ti.UI.iPhone.AnimationStyle.FLIP_FROM_RIGHT});
-		mainWin.open();
-	}else if(Titanium.Platform.osname === 'android')
-	{
-		mainWin.open();
-		settingWin.close();
-	}	
-	getCurrentWeather();
-});
 
 //
 // update weather every 5 minutes
@@ -242,7 +246,7 @@ function updateLocationName(lat, lng)
 //
 function updateWeather(lat, lng)
 {	
-	if(Titanium.Platform.osname === 'android')
+	if(PlatformOS === 'android')
 	{
 		indicator.message = '讀取天氣資訊中';
 	}
@@ -271,14 +275,14 @@ function updateWeather(lat, lng)
 		if(tempUnit === 'c')
 		{
 			temperatureLabel.text = temp_c + '°C';
-			if(Titanium.Platform.osname === 'iphone')
+			if(PlatformOS === 'iphone' || PlatformOS === 'ipad')
 			{
 				Titanium.UI.iPhone.appBadge = temp_c;
 			}
 		}else if(tempUnit === 'f')
 		{
 			temperatureLabel.text = temp_f + '°F';
-			if(Titanium.Platform.osname === 'iphone')
+			if(PlatformOS === 'iphone' || PlatformOS === 'ipad')
 			{
 				Titanium.UI.iPhone.appBadge = temp_f;
 			}
@@ -333,7 +337,7 @@ function getCurrentWeather()
 // iPhone background service to update temperature on badge
 //
 
-if(Titanium.Platform.osname === 'iphone')
+if(PlatformOS === 'iphone' || PlatformOS === 'ipad')
 {
 	var service;
 	Titanium.App.addEventListener('pause',function(e)
