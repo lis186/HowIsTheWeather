@@ -1,4 +1,6 @@
 var PlatformOS = Titanium.Platform.osname;
+var PlatformVersion = Titanium.Platform.version;
+
 //
 // create main window
 //
@@ -335,29 +337,39 @@ function getCurrentWeather()
 
 //
 // iPhone background service to update temperature on badge
+// update weather after resumed
 //
 
 if(PlatformOS === 'iphone' || PlatformOS === 'ipad')
 {
-	var service;
-	Titanium.App.addEventListener('pause',function(e)
+	if(PlatformVersion.split('.')[0] >= 4)
 	{
-		Ti.API.info('pause');
-		service = Titanium.App.iOS.registerBackgroundService({
-		    url: 'bgjob.js',
-			tempUnit: Titanium.App.Properties.getString('tempUnit', 'c')
-		  });
-		Titanium.API.info("registered background service = "+service);
-	});
+		var service;
+		Titanium.App.addEventListener('pause',function(e)
+		{
+			Ti.API.info('pause');
+			service = Titanium.App.iOS.registerBackgroundService({
+			    url: 'bgjob.js',
+				tempUnit: Titanium.App.Properties.getString('tempUnit', 'c')
+			  });
+			Titanium.API.info("registered background service = "+service);
+		});
 
-	Titanium.App.addEventListener('resume',function(e)
-	{
-		Ti.API.info('resume');
-		if(service != null){
-			getCurrentWeather();
-			service.stop();
-			service.unregister();
-			Ti.API.info('Stop background service');
-		}
+		Titanium.App.addEventListener('resumed',function(e)
+		{
+			Ti.API.info('resumed');
+			if(service != null){
+				getCurrentWeather();
+				service.stop();
+				service.unregister();
+				Ti.API.info('Stop background service');
+			}
+		});
+	}
+}else if(PlatformOS === 'android')
+{
+	Titanium.Android.currentActivity.addEventListener('resume', function(e) {
+	    Ti.API.info("resumed");
+		getCurrentWeather();
 	});
 }
