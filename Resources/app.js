@@ -257,22 +257,12 @@ function updateWeather(lat, lng)
 	xhr.onload = function()
 	{
 		indicator.hide();
-		Ti.API.info('weather xml ' + this.responseXML + ' text ' + this.responseText);
-		//var doc = this.responseXML.documentElement; responseXML has an encoding bug on Andrid
-		var doc = Titanium.XML.parseString(this.responseText).documentElement;
-		var condition = doc.evaluate("//weather/current_conditions/condition").item(0).getAttribute('data');
-		Ti.API.info(condition);
-		var temp_f = doc.evaluate("//weather/current_conditions/temp_f").item(0).getAttribute('data');
-		Ti.API.info(temp_f);
-		var temp_c = doc.evaluate("//weather/current_conditions/temp_c").item(0).getAttribute('data');
-		Ti.API.info(temp_c);
-		var humidity = doc.evaluate("//weather/current_conditions/humidity").item(0).getAttribute('data');
-		Ti.API.info(humidity);
-		var icon = 'http://www.google.com' + doc.evaluate("//weather/current_conditions/icon").item(0).getAttribute('data');
-		Ti.API.info(icon);
-		var wind_condition = doc.evaluate("//weather/current_conditions/wind_condition").item(0).getAttribute('data');
-		Ti.API.info(wind_condition.split('、')[0]);
-		Ti.API.info(wind_condition.split('、')[1]);
+		var data = JSON.parse(this.responseText).data;
+		var condition = data.current_condition[0].weatherDesc[0].value;
+		var temp_f = data.current_condition[0].temp_F;
+		var temp_c = data.current_condition[0].temp_C;
+		var icon = data.current_condition[0].weatherIconUrl[0].value;
+		var humidity = data.current_condition[0].humidity;
 		var tempUnit = Titanium.App.Properties.getString('tempUnit', 'c');
 		if(tempUnit === 'c')
 		{
@@ -292,10 +282,9 @@ function updateWeather(lat, lng)
 		weatherIcon.image = icon;
 		detailLabel.text = condition + '\n';
 		detailLabel.text += humidity + '\n';
-		detailLabel.text += wind_condition.split('、')[0] + '\n';
-		detailLabel.text += wind_condition.split('、')[1] + '\n';
 	};
-	var url = 'http://www.google.com/ig/api?hl=zh-tw&weather=,,,'+parseInt(lat*1000000, 10)+','+parseInt(lng*1000000, 10);
+	api_key = 'x5rdbt7d466du33m3rngxs2c';
+	var url = 'http://api.worldweatheronline.com/free/v1/weather.ashx?key='+api_key+'&format=json&q='+lat+','+lng;
 	Ti.API.info(url);
 	xhr.open('GET', url);
 	xhr.send();
